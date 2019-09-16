@@ -1,0 +1,4 @@
+name: SeichiEnvoy
+version: "1.14"
+author: unchama
+main: black.bracken.seichienvoy.SeichiEnvoy
