@@ -1,0 +1,70 @@
+package black.bracken.seichienvoy
+
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import net.md_5.bungee.api.event.PluginMessageEvent
+import net.md_5.bungee.api.event.ServerConnectEvent
+import net.md_5.bungee.api.plugin.Listener
+import net.md_5.bungee.event.EventHandler
+import java.io.ByteArrayInputStream
+import java.io.DataInputStream
+import java.lang.IllegalStateException
+import kotlin.coroutines.Continuation
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
+
+class PlayerDataSynchronizer: Listener {
+    private val serverSwitchWaitingMap: MutableMap<String, ConnectionState> = HashMap()
+
+    @EventHandler
+    fun onServerConnect(event: ServerConnectEvent) {
+        val player = event.player
+        val message = writtenMessage(
+                MessagingChannels.SUB_CHANNEL_SEND,
+                player.name
+        )
+
+        val connectedServerInfo = player.server?.info ?: return
+        val targetServer = event.target
+
+        when (serverSwitchWaitingMap[player.name]) {
+            is Switched -> {
+                serverSwitchWaitingMap.remove(player.name)
+            }
+            else -> {
+                event.isCancelled = true
+
+                GlobalScope.launch {
+                    connectedServerInfo.sendData(MessagingChannels.CHANNEL, message)
+                    suspendCoroutine { continuation: Continuation<Unit> ->
+                        serverSwitchWaitingMap[player.name] = Switching(continuation)
+                    }
+                    player.connect(targetServer)
+                }
+            }
+        }
+    }
+
+    @EventHandler
+    fun onPluginMessage(event: PluginMessageEvent) {
+        if (event.tag != MessagingChannels.CHANNEL) return
+
+        val input = DataInputStream(ByteArrayInputStream(event.data))
+        try {
+            if (input.readUTF() != MessagingChannels.SUB_CHANNEL_RECEIVE) return
+
+            val signaledPlayerName = input.readUTF()
+            when (val switchingState = serverSwitchWaitingMap[signaledPlayerName]) {
+                is Switching -> {
+                    serverSwitchWaitingMap[signaledPlayerName] = Switched
+                    switchingState.continuation.resume(Unit)
+                }
+                else -> {
+                    throw IllegalStateException("PlayerData discarded for non-switching player $signaledPlayerName")
+                }
+            }
+        } catch (exception: Exception) {
+            exception.printStackTrace()
+        }
+    }
+}
