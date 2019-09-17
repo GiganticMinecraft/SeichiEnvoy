@@ -12,7 +12,7 @@ import kotlin.coroutines.Continuation
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
-class PlayerDataSynchronizer : Listener {
+class PlayerDataSynchronizer(private val synchronizingOriginNames: Set<String>) : Listener {
   private val serverSwitchWaitingMap: MutableMap<String, ConnectionState> = HashMap()
 
   @EventHandler
@@ -24,6 +24,9 @@ class PlayerDataSynchronizer : Listener {
     )
 
     val connectedServerInfo = player.server?.info ?: return
+
+    if (connectedServerInfo.name !in synchronizingOriginNames) return
+
     val targetServer = event.target
 
     when (serverSwitchWaitingMap[player.name]) {
