@@ -28,7 +28,7 @@ class PlayerDataSynchronizer: Listener {
         val targetServer = event.target
 
         when (serverSwitchWaitingMap[player.name]) {
-            is Switched -> {
+            is PlayerDataUnloaded -> {
                 serverSwitchWaitingMap.remove(player.name)
             }
             else -> {
@@ -37,7 +37,7 @@ class PlayerDataSynchronizer: Listener {
                 GlobalScope.launch {
                     connectedServerInfo.sendData(MessagingChannels.CHANNEL, message)
                     suspendCoroutine { continuation: Continuation<Unit> ->
-                        serverSwitchWaitingMap[player.name] = Switching(continuation)
+                        serverSwitchWaitingMap[player.name] = RequestedPlayerDataUnloading(continuation)
                     }
                     player.connect(targetServer)
                 }
@@ -55,8 +55,8 @@ class PlayerDataSynchronizer: Listener {
 
             val signaledPlayerName = input.readUTF()
             when (val switchingState = serverSwitchWaitingMap[signaledPlayerName]) {
-                is Switching -> {
-                    serverSwitchWaitingMap[signaledPlayerName] = Switched
+                is RequestedPlayerDataUnloading -> {
+                    serverSwitchWaitingMap[signaledPlayerName] = PlayerDataUnloaded
                     switchingState.continuation.resume(Unit)
                 }
                 else -> {
