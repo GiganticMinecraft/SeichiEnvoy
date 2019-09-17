@@ -19,6 +19,7 @@ fun writtenMessage(vararg messages: String): ByteArray {
 
 object MessagingChannels {
     const val CHANNEL = "SeichiAssistBungee"
-    const val SUB_CHANNEL_SEND = "SaveAndDiscardPlayerData"
-    const val SUB_CHANNEL_RECEIVE = "PlayerDataSavedAndDiscarded"
+    const val SUB_CHANNEL_SEND = "UnloadPlayerData"
+    const val SUB_CHANNEL_RECEIVE_OK = "PlayerDataUnloaded"
+    const val SUB_CHANNEL_RECEIVE_FAIL = "FailedToUnloadPlayerData"
 }

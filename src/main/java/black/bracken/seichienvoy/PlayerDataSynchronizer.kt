@@ -51,16 +51,23 @@ class PlayerDataSynchronizer: Listener {
 
         val input = DataInputStream(ByteArrayInputStream(event.data))
         try {
-            if (input.readUTF() != MessagingChannels.SUB_CHANNEL_RECEIVE) return
-
+            val subChannel = input.readUTF()
             val signaledPlayerName = input.readUTF()
-            when (val switchingState = serverSwitchWaitingMap[signaledPlayerName]) {
-                is RequestedPlayerDataUnloading -> {
-                    serverSwitchWaitingMap[signaledPlayerName] = PlayerDataUnloaded
-                    switchingState.continuation.resume(Unit)
+
+            when (subChannel) {
+                MessagingChannels.SUB_CHANNEL_RECEIVE_OK -> {
+                    when (val switchingState = serverSwitchWaitingMap[signaledPlayerName]) {
+                        is RequestedPlayerDataUnloading -> {
+                            serverSwitchWaitingMap[signaledPlayerName] = PlayerDataUnloaded
+                            switchingState.continuation.resume(Unit)
+                        }
+                        else -> {
+                            throw IllegalStateException("PlayerData discarded for non-switching player $signaledPlayerName")
+                        }
+                    }
                 }
-                else -> {
-                    throw IllegalStateException("PlayerData discarded for non-switching player $signaledPlayerName")
+                MessagingChannels.SUB_CHANNEL_RECEIVE_FAIL -> {
+                    serverSwitchWaitingMap.remove(signaledPlayerName)
                 }
             }
         } catch (exception: Exception) {
