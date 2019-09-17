@@ -1,18 +1,24 @@
 package black.bracken.seichienvoy
 
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import net.md_5.bungee.api.event.PluginMessageEvent
 import net.md_5.bungee.api.event.ServerConnectEvent
 import net.md_5.bungee.api.plugin.Listener
 import net.md_5.bungee.api.plugin.Plugin
 import net.md_5.bungee.event.EventHandler
 import java.io.*
+import java.lang.IllegalStateException
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
+sealed class ConnectionState
+data class Switching(val continuation: Continuation<Unit>): ConnectionState()
+object Switched: ConnectionState()
+
 class SeichiEnvoy : Plugin(), Listener {
-    private val serverSwitchWaitingMap: MutableMap<String, Continuation<Unit>> = HashMap()
+    private val serverSwitchWaitingMap: MutableMap<String, ConnectionState> = HashMap()
 
     companion object {
         const val CHANNEL = "SeichiAssistBungee"
@@ -40,33 +46,53 @@ class SeichiEnvoy : Plugin(), Listener {
         return b.toByteArray()
     }
 
-   @EventHandler
-    fun onServerConnect(event: ServerConnectEvent) = runBlocking {
+    @EventHandler
+    fun onServerConnect(event: ServerConnectEvent) {
         val player = event.player
         val message = writtenMessage(
                 SUB_CHANNEL_SEND,
                 player.name
         )
 
-        player.server.info.sendData("SeichiAssistBungee", message)
-        suspendCoroutine { continuation: Continuation<Unit> ->
-            serverSwitchWaitingMap[player.name] = continuation
+        val connectedServerInfo = player.server?.info ?: return
+        val targetServer = event.target
+
+        when (serverSwitchWaitingMap[player.name]) {
+            is Switched -> {
+                serverSwitchWaitingMap.remove(player.name)
+            }
+            else -> {
+                event.isCancelled = true
+
+                GlobalScope.launch {
+                    connectedServerInfo.sendData(CHANNEL, message)
+                    suspendCoroutine { continuation: Continuation<Unit> ->
+                        serverSwitchWaitingMap[player.name] = Switching(continuation)
+                    }
+                    player.connect(targetServer)
+                }
+            }
         }
     }
 
     @EventHandler
     fun onPluginMessage(event: PluginMessageEvent) {
-        if (event.tag != SUB_CHANNEL_RECEIVE) return
+        if (event.tag != CHANNEL) return
 
         val input = DataInputStream(ByteArrayInputStream(event.data))
         try {
-            if (input.readUTF() != SUB_CHANNEL_RECEIVE) {
-                return
-            }
+            if (input.readUTF() != SUB_CHANNEL_RECEIVE) return
 
             val signaledPlayerName = input.readUTF()
-
-            serverSwitchWaitingMap.remove(signaledPlayerName)!!.resume(Unit)
+            when (val switchingState = serverSwitchWaitingMap[signaledPlayerName]) {
+                is Switching -> {
+                    serverSwitchWaitingMap[signaledPlayerName] = Switched
+                    switchingState.continuation.resume(Unit)
+                }
+                else -> {
+                    throw IllegalStateException("PlayerData discarded for non-switching player $signaledPlayerName")
+                }
+            }
         } catch (exception: Exception) {
             exception.printStackTrace()
         }
