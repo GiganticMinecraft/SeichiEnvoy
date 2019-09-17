@@ -45,7 +45,6 @@ dependencies {
     embed(kotlin("stdlib-jdk8"))
 
     implementation("net.md-5:bungeecord-api:1.8-SNAPSHOT")
-    implementation("org.spigotmc:spigot-api:1.12.2-R0.1-SNAPSHOT")
 }
 
 tasks.processResources {
