@@ -1,4 +1,4 @@
-name: SeichiEnvoy
-version: "1.14"
+name: @name@
+version: @version@
 author: unchama
 main: black.bracken.seichienvoy.SeichiEnvoy
