@@ -24,10 +24,10 @@ class PlayerDataSynchronizer(private val synchronizingOriginNames: Set<String>) 
     )
 
     val connectedServerInfo = player.server?.info ?: return
+    val targetServer = event.target
 
     if (connectedServerInfo.name !in synchronizingOriginNames) return
-
-    val targetServer = event.target
+    if (connectedServerInfo.address == targetServer.address) return
 
     when (serverSwitchWaitingMap[player.name]) {
       is PlayerDataUnloaded -> {
