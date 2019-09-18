@@ -12,7 +12,7 @@ plugins {
 }
 
 group = "click.seichi"
-version = "0.1.0-SNAPSHOT"
+version = "0.1.0"
 
 project.sourceSets {
     getByName("main") {
