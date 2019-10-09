@@ -58,7 +58,9 @@ class PlayerDataSynchronizer(private val synchronizingOriginNames: Set<String>) 
     if (serverSwitchWaitingMap[player.name] !is PlayerDataUnloaded) return
 
     serverSwitchWaitingMap.remove(player.name)
-    player.connect(event.cancelServer)
+    player.connect(event.cancelServer) { isSucceed, exception ->
+      if (!isSucceed) exception.printStackTrace()
+    }
   }
 
   @Suppress("unused")
