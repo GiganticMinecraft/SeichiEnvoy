@@ -4,6 +4,7 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import net.md_5.bungee.api.event.PluginMessageEvent
 import net.md_5.bungee.api.event.ServerConnectEvent
+import net.md_5.bungee.api.event.ServerKickEvent
 import net.md_5.bungee.api.plugin.Listener
 import net.md_5.bungee.event.EventHandler
 import java.io.ByteArrayInputStream
@@ -15,6 +16,7 @@ import kotlin.coroutines.suspendCoroutine
 class PlayerDataSynchronizer(private val synchronizingOriginNames: Set<String>) : Listener {
   private val serverSwitchWaitingMap: MutableMap<String, ConnectionState> = HashMap()
 
+  @Suppress("unused")
   @EventHandler
   fun onServerConnect(event: ServerConnectEvent) {
     val player = event.player
@@ -47,6 +49,21 @@ class PlayerDataSynchronizer(private val synchronizingOriginNames: Set<String>) 
     }
   }
 
+  @Suppress("unused")
+  @EventHandler
+  fun onConnectionRefused(event: ServerKickEvent) {
+    if (event.state != ServerKickEvent.State.CONNECTING) return
+    
+    val player = event.player
+    if (serverSwitchWaitingMap[player.name] !is PlayerDataUnloaded) return
+
+    serverSwitchWaitingMap.remove(player.name)
+    player.connect(event.cancelServer) { isSucceed, exception ->
+      if (!isSucceed) exception.printStackTrace()
+    }
+  }
+
+  @Suppress("unused")
   @EventHandler
   fun onPluginMessage(event: PluginMessageEvent) {
     if (event.tag != MessagingChannels.CHANNEL) return
