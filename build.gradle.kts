@@ -44,7 +44,7 @@ dependencies {
     embed("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.2.1")
     embed(kotlin("stdlib-jdk8"))
 
-    implementation("net.md-5:bungeecord-api:1.8-SNAPSHOT")
+    implementation("net.md-5:bungeecord-api:1.20-R0.2")
 }
 
 tasks.processResources {
