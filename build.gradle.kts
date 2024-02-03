@@ -7,7 +7,7 @@ plugins {
     java
     maven
     kotlin("jvm").version("1.3.40")
-    id("nebula.dependency-lock").version("2.2.4")
+    id("nebula.dependency-lock").version("12.7.1")
     id("org.jetbrains.kotlin.kapt").version("1.3.40")
 }
 
