@@ -41,7 +41,7 @@ val embed: Configuration by configurations.creating
 configurations.implementation { extendsFrom(embed) }
 
 dependencies {
-    embed("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.2.1")
+    embed("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0")
     embed(kotlin("stdlib-jdk8"))
 
     implementation("net.md-5:bungeecord-api:1.8-SNAPSHOT")
