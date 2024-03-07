@@ -6,7 +6,7 @@ import java.net.URI
 plugins {
     java
     maven
-    kotlin("jvm").version("1.3.40")
+    kotlin("jvm").version("1.9.23")
     id("nebula.dependency-lock").version("2.2.4")
     id("org.jetbrains.kotlin.kapt").version("1.3.40")
 }
