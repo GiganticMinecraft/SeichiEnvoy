@@ -8,7 +8,7 @@ plugins {
     maven
     kotlin("jvm").version("1.3.40")
     id("nebula.dependency-lock").version("2.2.4")
-    id("org.jetbrains.kotlin.kapt").version("1.3.40")
+    id("org.jetbrains.kotlin.kapt").version("2.3.21")
 }
 
 group = "click.seichi"
